@@ -1,0 +1,139 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MakanHub - Музыкальный стриминговый сервис</title>
+    <meta name="description" content="Стриминговый сервис с богатой коллекцией музыки и подкастов">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="{% static 'favicon.ico' %}">
+    <!-- Разрешаем подключение к localhost:3000 -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://localhost:3000 https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' http://localhost:3000; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http://localhost:3000 http://localhost:8000">
+    
+    <style>
+        /* Базовые стили для всех режимов */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: white;
+        }
+        
+        /* Стили для загрузки, пока React не отрендерился */
+        .app-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #0f172a;
+            color: white;
+        }
+        .app-loading h1 {
+            margin-bottom: 20px;
+            color: white;
+        }
+        .app-loading p {
+            margin-top: 10px;
+            color: #9ca3af;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #ec4899;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+    
+    {% if debug %}
+    <!-- В режиме разработки загружаем ресурсы с сервера разработки -->
+    {% else %}
+    <!-- В продакшене используем собранные файлы -->
+    <link href="{% static 'css/main.css' %}" rel="stylesheet">
+    {% endif %}
+</head>
+<body>
+    <div id="root">
+        <!-- Показываем спиннер загрузки, пока React не загрузился -->
+        <div class="app-loading">
+            <div class="spinner"></div>
+            <h1>MakanHub</h1>
+            <p>Загрузка приложения...</p>
+        </div>
+    </div>
+    
+    <script>
+        // Данные, которые нужно передать в React приложение
+        window.INITIAL_DATA = {
+            apiUrl: "{% url 'api-root' %}",
+            csrfToken: "{{ csrf_token }}",
+            user: JSON.parse('{{ user_data|safe }}'),
+            debug: {% if debug %}true{% else %}false{% endif %}
+        };
+        
+        console.log('MakanHub загружается...');
+        console.log('Режим отладки:', window.INITIAL_DATA.debug);
+    </script>
+    
+    {% if debug %}
+    <!-- В режиме разработки используем прокси к серверу разработки React -->
+    <script>
+        // Настройка URL сервера разработки
+        const REACT_DEV_SERVER = 'http://localhost:3000';
+        
+        // Пытаемся определить, запущен ли сервер разработки
+        function checkDevServer() {
+            fetch(`${REACT_DEV_SERVER}/static/js/bundle.js`, { mode: 'no-cors' })
+                .then(() => {
+                    console.log('React-сервер разработки доступен. Загружаем бандл...');
+                    loadDevBundle();
+                })
+                .catch(err => {
+                    console.error('Ошибка подключения к React-серверу:', err);
+                    showDevServerError();
+                });
+        }
+        
+        // Загружаем бандл с сервера разработки
+        function loadDevBundle() {
+            const script = document.createElement('script');
+            script.src = `${REACT_DEV_SERVER}/static/js/bundle.js`;
+            script.onerror = showDevServerError;
+            document.body.appendChild(script);
+        }
+        
+        // Показываем ошибку, если не удалось подключиться к серверу разработки
+        function showDevServerError() {
+            document.getElementById('root').innerHTML = `
+                <div style="padding: 20px; color: white; text-align: center; font-family: 'Inter', sans-serif;">
+                    <h2 style="color: #f87171;">Ошибка загрузки React</h2>
+                    <p>Не удалось загрузить React с сервера разработки.</p>
+                    <p>Убедитесь, что сервер запущен на порту 3000.</p>
+                    <pre style="background-color: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 8px; color: #fca5a5; text-align: left; overflow-x: auto; margin-top: 20px;">
+cd frontend
+npm start
+// или
+./start_react.sh</pre>
+                </div>
+            `;
+        }
+        
+        // Запускаем проверку сервера разработки
+        checkDevServer();
+    </script>
+    {% else %}
+    <!-- В продакшене используем собранные статические файлы -->
+    <script src="{% static 'js/main.js' %}"></script>
+    {% endif %}
+</body>
+</html> 

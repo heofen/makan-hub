@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Тест регистрации</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px;
+            cursor: pointer;
+        }
+        pre {
+            background-color: #f0f0f0;
+            padding: 10px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест регистрации через API</h1>
+    
+    <form id="registerForm">
+        <div>
+            <label for="username">Имя пользователя:</label>
+            <input type="text" id="username" name="username" value="testuser">
+        </div>
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="test@example.com">
+        </div>
+        <div>
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" value="Test1234">
+        </div>
+        <div>
+            <label for="password2">Подтверждение пароля:</label>
+            <input type="password" id="password2" name="password2" value="Test1234">
+        </div>
+        <button type="submit">Зарегистрировать</button>
+    </form>
+    
+    <h2>CSRF Token:</h2>
+    <pre id="csrfToken">Ожидание...</pre>
+    
+    <h2>Результат запроса:</h2>
+    <pre id="result">Ожидание...</pre>
+    
+    <h2>HTTP-статус:</h2>
+    <pre id="status">Ожидание...</pre>
+    
+    <h2>Заголовки ответа:</h2>
+    <pre id="headers">Ожидание...</pre>
+    
+    <script>
+        // Получение CSRF токена с сервера
+        async function fetchCsrfToken() {
+            try {
+                const response = await fetch('http://localhost:8000/app/');
+                const cookies = response.headers.get('set-cookie');
+                document.getElementById('csrfToken').textContent = 'Куки получены: ' + (cookies || 'нет');
+                
+                // Извлекаем CSRF токен из куки
+                const csrfToken = getCookie('csrftoken');
+                if (csrfToken) {
+                    document.getElementById('csrfToken').textContent = csrfToken;
+                    return csrfToken;
+                } else {
+                    document.getElementById('csrfToken').textContent = 'CSRF токен не найден в куках';
+                    return null;
+                }
+            } catch (error) {
+                document.getElementById('csrfToken').textContent = `Ошибка при получении CSRF токена: ${error.message}`;
+                return null;
+            }
+        }
+
+        // Загружаем CSRF токен при загрузке страницы
+        let csrfToken = null;
+        window.addEventListener('load', async () => {
+            csrfToken = await fetchCsrfToken();
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Если у нас еще нет CSRF токена, попробуем получить его
+            if (!csrfToken) {
+                csrfToken = await fetchCsrfToken();
+            }
+            
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const password2 = document.getElementById('password2').value;
+            
+            const userData = {
+                username,
+                email,
+                password,
+                password2
+            };
+            
+            document.getElementById('result').textContent = 'Отправка запроса...';
+            document.getElementById('status').textContent = 'Ожидание...';
+            document.getElementById('headers').textContent = 'Ожидание...';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/auth/register/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken || ''
+                    },
+                    body: JSON.stringify(userData),
+                    credentials: 'include' // Важно для работы с куками
+                });
+                
+                const headersText = Array.from(response.headers.entries())
+                    .map(([key, value]) => `${key}: ${value}`)
+                    .join('\n');
+                
+                document.getElementById('status').textContent = `${response.status} ${response.statusText}`;
+                document.getElementById('headers').textContent = headersText;
+                
+                try {
+                    const responseData = await response.json();
+                    document.getElementById('result').textContent = JSON.stringify(responseData, null, 2);
+                } catch (e) {
+                    const responseText = await response.text();
+                    document.getElementById('result').textContent = responseText;
+                }
+            } catch (error) {
+                document.getElementById('result').textContent = `Ошибка: ${error.message}`;
+            }
+        });
+        
+        // Функция для получения cookie по имени
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html> 
