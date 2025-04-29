@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import Dashboard from '../components/Dashboard';
 import Recommendations from '../components/Recommendations';
+import RecommendedTracks from '../components/RecommendedTracks';
 
 const HomePage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -55,7 +56,10 @@ const HomePage = () => {
             {/* Дашборд с метриками */}
             <Dashboard />
             
-            {/* Рекомендации треков */}
+            {/* Рекомендации треков в виде карточек */}
+            <RecommendedTracks />
+            
+            {/* Компактные рекомендации треков */}
             <Recommendations />
           </>
         ) : (

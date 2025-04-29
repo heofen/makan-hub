@@ -1,15 +1,15 @@
 /**
  * Форматирует продолжительность в секундах в формат мм:сс
- * @param {number} seconds - Продолжительность в секундах
- * @returns {string} Отформатированная продолжительность
+ * @param {number} durationInSeconds - продолжительность в секундах
+ * @returns {string} форматированная строка в формате мм:сс
  */
-export const formatDuration = (seconds) => {
-  if (!seconds || isNaN(seconds)) return '0:00';
+export const formatDuration = (durationInSeconds) => {
+  if (!durationInSeconds) return '0:00';
   
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
+  const minutes = Math.floor(durationInSeconds / 60);
+  const seconds = Math.floor(durationInSeconds % 60);
   
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
 /**

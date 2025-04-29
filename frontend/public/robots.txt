@@ -1,0 +1,12 @@
+# Правила для поисковых роботов
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Не индексировать страницы приватных плейлистов
+Disallow: /playlists/private/
+
+# Не индексировать страницы авторизации
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
